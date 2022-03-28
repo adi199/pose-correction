@@ -44,21 +44,15 @@ class BicepCurl:
         return [right_shoulder_angle, right_elbow_angle]
 
     def evaluate(self, left_shoulder_angle, left_elbow_angle, right_shoulder_angle, right_elbow_angle):
-        if 6.0 <= left_shoulder_angle <= 12.0:
+        if 35.0 <= left_shoulder_angle:
+            self.correction_message['shoulder']['left'] = 'Excess Left arm rotation'
+        else:
             self.correction_message['shoulder']['left'] = ''
-        else:
-            if left_shoulder_angle > 12.0:
-                self.correction_message['shoulder']['left'] = 'Left Shoulder too wide'
-            if left_shoulder_angle < 6.0:
-                self.correction_message['shoulder']['left'] = 'Left Shoulder too close'
 
-        if 6.0 <= right_shoulder_angle <= 12.0:
-            self.correction_message['shoulder']['right'] = ''
+        if 35.0 <= right_shoulder_angle <= 70.0:
+            self.correction_message['shoulder']['right'] = 'Excess Right arm rotation'
         else:
-            if right_shoulder_angle > 12.0:
-                self.correction_message['shoulder']['right'] = 'Right Shoulder too wide'
-            if right_shoulder_angle < 6.0:
-                self.correction_message['shoulder']['right'] = 'Right Shoulder too close'
+            self.correction_message['shoulder']['right'] = ''
 
     def get_coord(self, landmark_name):
         return [self.landmarks[mp_pose.PoseLandmark[landmark_name]].x,

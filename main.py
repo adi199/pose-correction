@@ -1,7 +1,6 @@
 import cv2 as cv
 import mediapipe.python.solutions.pose as mp_pose
 import mediapipe.python.solutions.drawing_utils as mp_draw
-import numpy as np
 import PoseUtils
 from BicepCurl import BicepCurl
 
@@ -12,11 +11,33 @@ class PoseEstimation:
     frame = None
     pose = None
 
-    def __init__(self, min_detection_confidence, min_tracking_confidence):
+    def __init__(self, min_detection_confidence, min_tracking_confidence, input_frame=None):
         # Connection to webcam
-        self.web_cam = cv.VideoCapture(0)
+        if input_frame is None:
+            self.web_cam = cv.VideoCapture(0)
+        else:
+            self.frame = cv.imread(input_frame)
+
         self.pose_obj = mp_pose.Pose(min_detection_confidence=min_detection_confidence,
                                      min_tracking_confidence=min_tracking_confidence)
+
+    def estimate(self):
+        self.estimate_pose()
+        self.draw_pose()
+
+        try:
+            bicep_curl = BicepCurl()
+            bicep_curl.check_pose(self.pose)
+            message = bicep_curl.get_correction_message()
+            self.put_text((10, 20), message['shoulder']['left'])
+            self.put_text((10, 40), message['shoulder']['right'])
+        except Exception as e:
+            print(e)
+            pass
+
+        cv.imshow(winname='Image', mat=self.frame)
+        cv.waitKey(0)
+        cv.destroyAllWindows()
 
     def start_feed(self):
         bicep_curl = BicepCurl()
@@ -61,5 +82,5 @@ class PoseEstimation:
 
 
 if __name__ == '__main__':
-    pose_estimation = PoseEstimation(min_detection_confidence=0.5, min_tracking_confidence=0.5)
-    pose_estimation.start_feed()
+    pose_estimation = PoseEstimation(min_detection_confidence=0.5, min_tracking_confidence=0.5, input_frame='./data/sample.jpeg')
+    pose_estimation.estimate()

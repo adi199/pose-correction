@@ -90,34 +90,26 @@ class Lunges:
         return [right_shoulder_angle]
 
     def evaluate(self, left_knee_angle, right_knee_angle):
-        # if (left_elbow_angle >= 175 or right_elbow_angle >= 175) and self.movement_direction == 0:
-        #     self.rep += 0.5
-        #     self.movement_direction = 1
-        # if (left_elbow_angle <= 7 or right_elbow_angle <= 7) and self.movement_direction == 1:
-        #     self.rep += 0.5
-        #     self.movement_direction = 0
+        if (left_knee_angle < 90 or right_knee_angle < 90) and self.movement_direction == 0:
+            self.rep += 0.5
+            self.movement_direction = 1
+        if (left_knee_angle > 170 or right_knee_angle > 170) and self.movement_direction == 1:
+            self.rep += 0.5
+            self.movement_direction = 0
 
-        if left_knee_angle > 120.0:
-            self.correction_message['knee']['left'] = 'Excess bent in left knee'
+        if 70.0 > left_knee_angle:
+            self.correction_message['knee']['left'] = 'Left knee not bent enough'
             self.wrong_pose['LEFT_KNEE'] = True
         else:
-            if 70.0 > left_knee_angle:
-                self.correction_message['knee']['left'] = 'Left knee not bent enough'
-                self.wrong_pose['LEFT_KNEE'] = True
-            else:
-                self.correction_message['knee']['left'] = ''
-                self.wrong_pose['LEFT_KNEE'] = False
+            self.correction_message['knee']['left'] = ''
+            self.wrong_pose['LEFT_KNEE'] = False
 
-        if right_knee_angle > 120.0:
-            self.correction_message['knee']['right'] = 'Excess bent in right knee'
+        if 70.0 > right_knee_angle:
+            self.correction_message['knee']['right'] = 'Left knee not bent enough'
             self.wrong_pose['RIGHT_KNEE'] = True
         else:
-            if 70.0 > right_knee_angle:
-                self.correction_message['knee']['right'] = 'Left knee not bent enough'
-                self.wrong_pose['RIGHT_KNEE'] = True
-            else:
-                self.correction_message['knee']['right'] = ''
-                self.wrong_pose['RIGHT_KNEE'] = False
+            self.correction_message['knee']['right'] = ''
+            self.wrong_pose['RIGHT_KNEE'] = False
 
     def get_coord(self, landmark_name):
         landmark = self.landmarks[mp_pose.PoseLandmark[landmark_name]]

@@ -1,3 +1,5 @@
+import sys
+
 import cv2
 import mediapipe.python.solutions.pose as mp_pose
 import PoseUtils
@@ -40,7 +42,7 @@ class BicepCurl:
             self.display_angles(left_angles, right_angles)
             self.display_reps()
         except Exception as e:
-            print(e)
+            print(sys.exc_info()[2])
 
     def display_reps(self):
         cv2.putText(self.image, str(math.ceil(self.rep)), (20, 30), cv2.FONT_HERSHEY_DUPLEX, 1, (127, 255, 127), 2)

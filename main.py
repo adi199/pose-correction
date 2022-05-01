@@ -3,28 +3,28 @@ import mediapipe.python.solutions.pose as mp_pose
 import mediapipe.python.solutions.drawing_utils as mp_draw
 import PoseUtils
 from BicepCurl import BicepCurl
+from Lunges import Lunges
+import sys
 
 
 class PoseEstimation:
-
     feed_name = 'Webcam Feed'
     frame = None
     pose = None
 
-    def __init__(self, min_detection_confidence, min_tracking_confidence, input_frame=None):
+    def __init__(self, min_detection_confidence, min_tracking_confidence, input_frame=None, exercise='bicep_curl'):
         # Connection to webcam
         if input_frame is None:
             self.web_cam = cv.VideoCapture(0)
         else:
             self.frame = cv.imread(input_frame)
-
+        self.exercise = BicepCurl() if exercise == 'bicep_curl' else Lunges()
         self.pose_obj = mp_pose.Pose(min_detection_confidence=min_detection_confidence,
                                      min_tracking_confidence=min_tracking_confidence)
 
     def estimate(self):
         self.estimate_pose()
-        self.draw_pose()
-
+        # self.draw_pose()
         try:
             bicep_curl = BicepCurl()
             bicep_curl.check_pose(image=self.frame, pose=self.pose)
@@ -40,7 +40,6 @@ class PoseEstimation:
         cv.destroyAllWindows()
 
     def start_feed(self):
-        bicep_curl = BicepCurl()
         while self.web_cam.isOpened():
             # Read the frame
             ret, self.frame = self.web_cam.read()
@@ -50,12 +49,12 @@ class PoseEstimation:
             # self.draw_pose()
 
             try:
-                bicep_curl.check_pose(image=self.frame, pose=self.pose)
-                # message = bicep_curl.get_correction_message()
+                self.exercise.check_pose(image=self.frame, pose=self.pose)
+                # message = self.exercise.get_correction_message()
                 # self.put_text((10, 20), message['shoulder']['left'])
                 # self.put_text((10, 40), message['shoulder']['right'])
-            except Exception as e:
-                print(e)
+            except Exception:
+                print(sys.exc_info()[2])
                 pass
 
             # Exit condition
@@ -82,6 +81,6 @@ class PoseEstimation:
 
 
 if __name__ == '__main__':
-    pose_estimation = PoseEstimation(min_detection_confidence=0.5, min_tracking_confidence=0.5)
+    pose_estimation = PoseEstimation(min_detection_confidence=0.5, min_tracking_confidence=0.5, exercise=sys.argv[1])
     pose_estimation.start_feed()
     pose_estimation.estimate()

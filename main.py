@@ -27,7 +27,7 @@ class PoseEstimation:
 
         try:
             bicep_curl = BicepCurl()
-            bicep_curl.check_pose(self.pose)
+            bicep_curl.check_pose(image=self.frame, pose=self.pose)
             message = bicep_curl.get_correction_message()
             self.put_text((10, 20), message['shoulder']['left'])
             self.put_text((10, 40), message['shoulder']['right'])
@@ -47,13 +47,13 @@ class PoseEstimation:
 
             # Get and draw pose in the frame
             self.estimate_pose()
-            self.draw_pose()
+            # self.draw_pose()
 
             try:
-                bicep_curl.check_pose(self.pose)
-                message = bicep_curl.get_correction_message()
-                self.put_text((10, 20), message['shoulder']['left'])
-                self.put_text((10, 40), message['shoulder']['right'])
+                bicep_curl.check_pose(image=self.frame, pose=self.pose)
+                # message = bicep_curl.get_correction_message()
+                # self.put_text((10, 20), message['shoulder']['left'])
+                # self.put_text((10, 40), message['shoulder']['right'])
             except Exception as e:
                 print(e)
                 pass
@@ -82,5 +82,6 @@ class PoseEstimation:
 
 
 if __name__ == '__main__':
-    pose_estimation = PoseEstimation(min_detection_confidence=0.5, min_tracking_confidence=0.5, input_frame='./data/sample.jpeg')
+    pose_estimation = PoseEstimation(min_detection_confidence=0.5, min_tracking_confidence=0.5)
+    pose_estimation.start_feed()
     pose_estimation.estimate()

@@ -5,6 +5,7 @@ import PoseUtils
 from BicepCurl import BicepCurl
 from Lunges import Lunges
 import sys
+import traceback
 
 
 class PoseEstimation:
@@ -35,10 +36,6 @@ class PoseEstimation:
             print(e)
             pass
 
-        cv.imshow(winname='Image', mat=self.frame)
-        cv.waitKey(0)
-        cv.destroyAllWindows()
-
     def start_feed(self):
         while self.web_cam.isOpened():
             # Read the frame
@@ -48,14 +45,7 @@ class PoseEstimation:
             self.estimate_pose()
             # self.draw_pose()
 
-            try:
-                self.exercise.check_pose(image=self.frame, pose=self.pose)
-                # message = self.exercise.get_correction_message()
-                # self.put_text((10, 20), message['shoulder']['left'])
-                # self.put_text((10, 40), message['shoulder']['right'])
-            except Exception:
-                print(sys.exc_info()[2])
-                pass
+            self.display_error_message()
 
             # Exit condition
             if cv.waitKey(10) & 0xFF == ord('q'):
@@ -64,6 +54,19 @@ class PoseEstimation:
 
             # Display frame
             cv.imshow(winname=self.feed_name, mat=self.frame)
+
+    def display_error_message(self):
+        try:
+            self.exercise.check_pose(image=self.frame, pose=self.pose)
+            message = self.exercise.get_correction_message()
+            if isinstance(self.exercise, BicepCurl):
+                self.put_text((20, 40), message['shoulder']['left'])
+                self.put_text((20, 60), message['shoulder']['right'])
+            else:
+                self.put_text((20, 40), message['knee']['left'])
+                self.put_text((20, 60), message['knee']['right'])
+        except Exception:
+            print(traceback.format_exc())
 
     def put_text(self, coord, text):
         cv.putText(self.frame, str(text), coord, cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv.LINE_AA)

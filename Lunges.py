@@ -97,15 +97,15 @@ class Lunges:
             self.rep += 0.5
             self.movement_direction = 0
 
-        if 70.0 > left_knee_angle:
-            self.correction_message['knee']['left'] = 'Left knee not bent enough'
+        if 80.0 > left_knee_angle:
+            self.correction_message['knee']['left'] = 'Excess Left knee bent'
             self.wrong_pose['LEFT_KNEE'] = True
         else:
             self.correction_message['knee']['left'] = ''
             self.wrong_pose['LEFT_KNEE'] = False
 
-        if 70.0 > right_knee_angle:
-            self.correction_message['knee']['right'] = 'Left knee not bent enough'
+        if 80.0 > right_knee_angle:
+            self.correction_message['knee']['right'] = 'Excess Right knee bent'
             self.wrong_pose['RIGHT_KNEE'] = True
         else:
             self.correction_message['knee']['right'] = ''

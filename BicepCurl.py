@@ -1,9 +1,9 @@
-import sys
-
 import cv2
 import mediapipe.python.solutions.pose as mp_pose
 import PoseUtils
 import math
+import traceback
+from Model import Model
 
 
 class BicepCurl:
@@ -30,6 +30,7 @@ class BicepCurl:
         self.target_landmarks = ['LEFT_ELBOW', 'LEFT_SHOULDER', 'RIGHT_ELBOW', 'RIGHT_SHOULDER']
         self.rep = 0
         self.movement_direction = 1
+        self.model = Model()
 
     def check_pose(self, image, pose):
         try:
@@ -37,51 +38,32 @@ class BicepCurl:
             self.landmarks = pose.pose_landmarks.landmark
             left_angles = self.get_left_angles()
             right_angles = self.get_right_angles()
-            self.evaluate(left_angles[0], left_angles[1], right_angles[0], right_angles[1])
+            self.ml_evaluate(left_angles[0], left_angles[1], right_angles[0], right_angles[1])
             self.mark_target_landmarks()
             self.display_angles(left_angles, right_angles)
             self.display_reps()
         except Exception as e:
-            print(sys.exc_info()[2])
+            print(traceback.format_exc())
 
     def display_reps(self):
         cv2.putText(self.image, str(math.ceil(self.rep)), (20, 30), cv2.FONT_HERSHEY_DUPLEX, 1, (127, 255, 127), 2)
 
-    def display_angles(self, left_angles, right_angles):
+    def display_angle(self, text, landmark):
         text_face = cv2.FONT_HERSHEY_DUPLEX
         text_scale, text_thickness = 0.5, 2
 
-        text = str(math.ceil(left_angles[0]))
         text_size = cv2.getTextSize(text, text_face, text_scale, text_thickness)
-        center = [*self.get_coord('LEFT_SHOULDER'), ]
+        center = [*self.get_coord(landmark), ]
         center[0] = int(center[0] * self.image.shape[1])
         center[1] = int(center[1] * self.image.shape[0])
         center = (center[0] - text_size[0][0] // 2, center[1] + text_size[0][1] // 2)
         cv2.putText(self.image, text, center, text_face, text_scale, (127, 255, 127), 1, cv2.LINE_AA)
 
-        text = str(math.ceil(right_angles[0]))
-        text_size = cv2.getTextSize(text, text_face, text_scale, text_thickness)
-        center = [*self.get_coord('RIGHT_SHOULDER'), ]
-        center[0] = int(center[0] * self.image.shape[1])
-        center[1] = int(center[1] * self.image.shape[0])
-        center = (center[0] - text_size[0][0] // 2, center[1] + text_size[0][1] // 2)
-        cv2.putText(self.image, text, center, text_face, text_scale, (127, 255, 127), 1, cv2.LINE_AA)
-
-        text = str(math.ceil(right_angles[1]))
-        text_size = cv2.getTextSize(text, text_face, text_scale, text_thickness)
-        center = [*self.get_coord('LEFT_ELBOW'), ]
-        center[0] = int(center[0] * self.image.shape[1])
-        center[1] = int(center[1] * self.image.shape[0])
-        center = (center[0] - text_size[0][0] // 2, center[1] + text_size[0][1] // 2)
-        cv2.putText(self.image, text, center, text_face, text_scale, (127, 255, 127), 1, cv2.LINE_AA)
-
-        text = str(math.ceil(right_angles[1]))
-        text_size = cv2.getTextSize(text, text_face, text_scale, text_thickness)
-        center = [*self.get_coord('RIGHT_ELBOW'), ]
-        center[0] = int(center[0] * self.image.shape[1])
-        center[1] = int(center[1] * self.image.shape[0])
-        center = (center[0] - text_size[0][0] // 2, center[1] + text_size[0][1] // 2)
-        cv2.putText(self.image, text, center, text_face, text_scale, (127, 255, 127), 1, cv2.LINE_AA)
+    def display_angles(self, left_angles, right_angles):
+        self.display_angle(str(math.ceil(left_angles[0])), 'LEFT_SHOULDER')
+        self.display_angle(str(math.ceil(right_angles[1])), 'LEFT_ELBOW')
+        self.display_angle(str(math.ceil(right_angles[0])), 'RIGHT_SHOULDER')
+        self.display_angle(str(math.ceil(right_angles[1])), 'RIGHT_ELBOW')
 
     def mark_target_landmarks(self):
         overlay = self.image.copy()
@@ -117,11 +99,27 @@ class BicepCurl:
 
         return [right_shoulder_angle, right_elbow_angle]
 
-    def evaluate(self, left_shoulder_angle, left_elbow_angle, right_shoulder_angle, right_elbow_angle):
-        if (left_elbow_angle >= 175 or right_elbow_angle >= 175) and self.movement_direction == 0:
+    def ml_evaluate(self,  left_shoulder_angle, left_elbow_angle, right_shoulder_angle, right_elbow_angle):
+        if (left_elbow_angle >= 175 and right_elbow_angle >= 175) and self.movement_direction == 0:
             self.rep += 0.5
             self.movement_direction = 1
-        if (left_elbow_angle <= 7 or right_elbow_angle <= 7) and self.movement_direction == 1:
+        if (left_elbow_angle <= 7 and right_elbow_angle <= 7) and self.movement_direction == 1:
+            self.rep += 0.5
+            self.movement_direction = 0
+
+        label = self.model.predict([[left_shoulder_angle, right_shoulder_angle]])
+
+        self.correction_message['shoulder']['left'] = 'Excess Left arm rotation' if label == 0 or label == 2 else ''
+        self.wrong_pose['LEFT_SHOULDER'] = True if label == 0 or label == 2 else False
+
+        self.correction_message['shoulder']['right'] = 'Excess Right arm rotation' if label == 1 or label == 2 else ''
+        self.wrong_pose['RIGHT_SHOULDER'] = True if label == 1 or label == 2 else False
+
+    def evaluate(self, left_shoulder_angle, left_elbow_angle, right_shoulder_angle, right_elbow_angle):
+        if (left_elbow_angle >= 175 and right_elbow_angle >= 175) and self.movement_direction == 0:
+            self.rep += 0.5
+            self.movement_direction = 1
+        if (left_elbow_angle <= 7 and right_elbow_angle <= 7) and self.movement_direction == 1:
             self.rep += 0.5
             self.movement_direction = 0
 
